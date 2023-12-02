@@ -75,14 +75,14 @@ class MyQuantumCircuit:
         self.circuit.measure(self.circuit.qregs[qreg_index], self.circuit.cregs[creg_index])
         return self
 
-    def execute_circuit(self, N_SHOTS=None):
+    def execute_circuit(self, n_shots=None):
         """
         Execute this circuit on the QASM simulator.
-        :param N_SHOTS: number of shots
+        :param n_shots: number of shots
         :return: this circuit
         """
         simulator = Aer.get_backend('qasm_simulator')
-        self.job = execute(self.circuit, backend=simulator, shots=N_SHOTS)
+        self.job = execute(self.circuit, backend=simulator, shots=n_shots)
         self.result = self.job.result()
         return self
 
@@ -121,7 +121,12 @@ class MyQuantumCircuit:
         return self
 
     def plot_results(self):
-        return self, plot_histogram(self.result.get_counts(self.circuit))
+        counts = self.result.get_counts(self.circuit)
+        try:
+            counts['0']
+        except KeyError:
+            counts['0'] = 0
+        return self, plot_histogram(counts)
 
     def barrier(self):
         self.circuit.barrier()
