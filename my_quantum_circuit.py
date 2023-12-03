@@ -115,9 +115,9 @@ class MyQuantumCircuit:
     def draw_circuit_nice(self):
         return self, self.circuit.draw('mpl')
 
-    def plot_statevector(self, statevector_label):
+    def plot_statevector(self, statevector_label, useTwosComplement=False):
         print(f'Statevector \"{statevector_label}\": ')
-        _statevector_to_circle_notation(self.result.data()[statevector_label])
+        _statevector_to_circle_notation(self.result.data()[statevector_label], useTwosComplement)
         return self
 
     def plot_results(self):

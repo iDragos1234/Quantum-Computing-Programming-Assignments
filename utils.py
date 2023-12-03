@@ -10,13 +10,21 @@ from qiskit.result import Result
 from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 
+def twos_comp(val, bits):
+    """compute the 2's complement of int value val"""
+    if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
+        val = val - (1 << bits)        # compute negative value
+    return val                         # return positive value as is
 
-def _statevector_to_circle_notation(statevector: Statevector):
+
+def _statevector_to_circle_notation(statevector: Statevector, useTwosComplement=False):
     RADIUS = 0.5
     n_states = statevector.data.size
 
     rows = int(np.ceil(n_states / 8.0))
     cols = min(n_states, 8)
+
+    n_bits = int(np.ceil(np.log2(n_states)))
 
     for row in range(rows):
         fig, axs = plt.subplots(1, cols)
@@ -31,13 +39,18 @@ def _statevector_to_circle_notation(statevector: Statevector):
             axs[col].add_patch(circleExt)
             axs[col].add_patch(circleInt)
             axs[col].set_aspect('equal')
-            state_number = "|" + str(state_index) + "⟩"
+
+            state_number = f'|{state_index}⟩'
+            if useTwosComplement:
+                state_number = f'|{twos_comp(state_index, n_bits)}⟩'
+
             axs[col].set_title(state_number)
             xl = [RADIUS, RADIUS + RADIUS * probability * np.cos(phase + pi/2)]
             yl = [RADIUS, RADIUS + RADIUS * probability * np.sin(phase + pi/2)]
             axs[col].plot(xl, yl, 'r')
             axs[col].axis('off')
         plt.show()
+
 
 def plot_experiment(counts):
     n_states = len(counts)
