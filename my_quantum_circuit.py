@@ -67,6 +67,29 @@ class MyQuantumCircuit:
 
         return self
 
+
+    # def had(self, qubits: dict[(int, set[int])]):
+    #     """
+    #     Apply HAD gates on the given qubit indices, residing at the given quantum registers' indices.
+    #     :param qubits: dictionary mapping the quantum registers' indices to their qubits
+    #     :return: self
+    #     """
+    #     for qreg_index, qubits_indices in qubits.items():
+    #         qreg = self.circuit.qregs[qreg_index]
+    #         self.circuit.h(qreg[qubits_indices])
+    #     return self
+
+    # def x(self, qubits: dict[(int, set[int])]):
+    #     """
+    #     Apply NOT gates on the given qubit indices, residing at the given quantum registers' indices.
+    #     :param qubits: dictionary mapping the quantum registers' indices to their qubits
+    #     :return: self
+    #     """
+    #     for qreg_index, qubits_indices in qubits.items():
+    #         qreg = self.circuit.qregs[qreg_index]
+    #         self.circuit.x(qreg[qubits_indices])
+    #     return self
+
     def save_statevector(self, statevector_label=None):
         self.circuit.save_statevector(label=statevector_label)
         return self
@@ -122,12 +145,76 @@ class MyQuantumCircuit:
 
     def plot_results(self):
         counts = self.result.get_counts(self.circuit)
-        try:
-            counts['0']
-        except KeyError:
-            counts['0'] = 0
         return self, plot_histogram(counts)
 
     def barrier(self):
         self.circuit.barrier()
+        return self
+
+    def increment(self, qubits, carry_qubits=None):
+        """
+        Function implementing the operator: qubits++.
+        :param qubits: incrementation term
+        :type qubits: list[Qubit] or QuantumRegister
+        :param carry_qubits: qubits storing addition carries
+        :type carry_qubits: list[Qubit] or QuantumRegister
+        :return: self
+        """
+        n: int = qubits.size
+        _circuit_: QuantumCircuit = self.circuit
+        self.barrier()
+
+        if carry_qubits is None:
+            carry_qubits = QuantumRegister(n, 'add_carry')
+            _circuit_.add_register(carry_qubits)
+
+        _circuit_.x(carry_qubits[0])
+        for i in range(n - 1):
+            _circuit_.ccx(carry_qubits[i], qubits[i], carry_qubits[i + 1])
+            _circuit_.cx(carry_qubits[i], qubits[i])
+        _circuit_.cx(carry_qubits[n - 1], qubits[n - 1])
+        self.barrier()
+        return self
+
+    def add(self, qubitsA, qubitsB, carry_qubits=None):
+        """
+        Function implementing the operator: qubitsA += qubitsB. Only works if len(qubitsA) == len(qubitsB).
+        :param qubitsA: first term of addition
+        :type qubitsA: list[Qubit] or QuantumRegister
+        :param qubitsB: second term of addition
+        :type qubitsB: list[Qubit] or QuantumRegister
+        :param carry_qubits: qubits storing the addition carries
+        :type carry_qubits: list[Qubit] or QuantumRegister
+        :return: self
+        """
+        assert len(qubitsA) == len(qubitsB)
+        n: int = len(qubitsA)
+
+        _circuit_: QuantumCircuit = self.circuit
+
+        self.barrier()
+
+        if carry_qubits is None:
+            carry_qubits = QuantumRegister(n + 1, 'add_carry')
+            _circuit_.add_register(carry_qubits)
+
+        for i in range(n - 1):
+            _circuit_.ccx(qubitsB[i], qubitsA[i], carry_qubits[i + 1])
+            _circuit_.cx(qubitsB[i], qubitsA[i])
+            _circuit_.ccx(carry_qubits[i], qubitsA[i], carry_qubits[i + 1])
+
+        _circuit_.ccx(qubitsB[n - 1], qubitsA[n - 1], carry_qubits[n])
+        _circuit_.cx(qubitsB[n - 1], qubitsA[n - 1])
+        _circuit_.ccx(carry_qubits[n - 1], qubitsA[n - 1], carry_qubits[n])
+
+        _circuit_.cx(carry_qubits[n - 1], qubitsA[n - 1])
+        for i in range(n - 1):
+            _circuit_.ccx(carry_qubits[(n - 2) - i], qubitsA[(n - 2) - i], carry_qubits[(n - 1) - i])
+            _circuit_.cx(qubitsB[(n - 2) - i], qubitsA[(n - 2) - i])
+            _circuit_.ccx(qubitsB[(n - 2) - i], qubitsA[(n - 2) - i], carry_qubits[(n - 1) - i])
+
+            _circuit_.cx(carry_qubits[(n - 2) - i], qubitsA[(n - 2) - i])
+            _circuit_.cx(qubitsB[(n - 2) - i], qubitsA[(n - 2) - i])
+
+        self.barrier()
         return self

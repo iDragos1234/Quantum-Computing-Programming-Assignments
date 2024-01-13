@@ -10,11 +10,12 @@ from qiskit.result import Result
 from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 
-def twos_comp(val, bits):
+
+def _twos_complement(val, bits):
     """compute the 2's complement of int value val"""
-    if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
-        val = val - (1 << bits)        # compute negative value
-    return val                         # return positive value as is
+    if (val & (1 << (bits - 1))) != 0:  # if sign bit is set e.g., 8bit: 128-255
+        val = val - (1 << bits)         # compute negative value
+    return val                          # return positive value as is
 
 
 def _statevector_to_circle_notation(statevector: Statevector, useTwosComplement=False):
@@ -42,7 +43,7 @@ def _statevector_to_circle_notation(statevector: Statevector, useTwosComplement=
 
             state_number = f'|{state_index}⟩'
             if useTwosComplement:
-                state_number = f'|{twos_comp(state_index, n_bits)}⟩'
+                state_number = f'|{_twos_complement(state_index, n_bits)}⟩'
 
             axs[col].set_title(state_number)
             xl = [RADIUS, RADIUS + RADIUS * probability * np.cos(phase + pi/2)]
